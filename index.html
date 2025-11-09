@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprobante ICE KING</title>
+    <!-- Carga de Tailwind CSS para estilos -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-blue': '#1D4ED8',
+                        'secondary-gray': '#F3F4F6',
+                        'ice-blue': '#BFDBFE',
+                        'brand-color': '#06B6D4', /* Nuevo color para ICE KING */
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Estilos personalizados para la tipografía y el espaciado en móviles */
+        body {
+            background-color: #E5E7EB; /* Fondo suave */
+            font-family: 'Inter', sans-serif;
+            padding: 1rem;
+        }
+        /* Estilo para simular el comprobante impreso o digital */
+        .receipt-card {
+            border: 3px solid #06B6D4; /* Borde más llamativo con el color de la marca */
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+            background-color: white;
+            padding: 2rem;
+            margin-top: 1.5rem;
+            transform: scale(1); /* Asegura que la captura se vea bien */
+        }
+        /* Estilo para la animación del botón de descarga */
+        .download-button:hover {
+            animation: pulse-shadow 1s infinite;
+        }
+        @keyframes pulse-shadow {
+            0% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(6, 182, 212, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center">
+
+    <!-- Contenedor Principal y Panel de Entrada -->
+    <div class="w-full max-w-sm mx-auto p-4 bg-white rounded-xl shadow-lg border border-gray-200">
+        <h1 class="text-xl font-bold text-center text-brand-color mb-4">🧊 ICE KING - Generador de Boletas</h1>
+
+        <!-- Campo de Kilos -->
+        <div class="mb-4">
+            <label for="kilosInput" class="block text-sm font-medium text-gray-700 mb-1">
+                1. Kilos de Hielo a Vender
+            </label>
+            <input type="number" id="kilosInput" placeholder="Solo números enteros" min="1" step="1" 
+                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-brand-color focus:border-brand-color transition duration-150"
+                   value="1">
+            <p id="error-message" class="text-red-500 text-xs mt-1 hidden">Por favor, ingrese una cantidad válida (solo números enteros).</p>
+        </div>
+
+        <!-- Campo de Fecha (Nuevo) -->
+        <div class="mb-6">
+            <label for="dateInput" class="block text-sm font-medium text-gray-700 mb-1">
+                2. Fecha del Comprobante
+            </label>
+            <input type="date" id="dateInput" 
+                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-brand-color focus:border-brand-color transition duration-150">
+        </div>
+        
+        <!-- Botón de Generación -->
+        <button onclick="generateReceipt()"
+                class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition duration-200 shadow-lg transform hover:scale-[1.02] active:scale-[0.98]">
+            3. Generar Comprobante
+        </button>
+    </div>
+
+    <!-- Área del Comprobante (Diseñada para ser capturada/screenshot) -->
+    <div id="receiptContainer" class="hidden w-full max-w-sm mx-auto receipt-card mt-6">
+        <!-- El contenido será insertado aquí por JavaScript -->
+    </div>
+    
+    <!-- Botón de Descarga/Screenshot y Mensaje -->
+    <div id="downloadArea" class="hidden w-full max-w-sm mx-auto mt-4">
+        <button id="downloadButton" onclick="showScreenshotInstructions()"
+                class="download-button w-full bg-brand-color hover:bg-cyan-600 text-white font-bold py-3 rounded-xl transition duration-300 shadow-xl border-b-4 border-cyan-700">
+            📸 Listo, haz clic aquí para Descargar/Capturar
+        </button>
+        <p class="text-sm text-center text-gray-600 mt-2 p-2 rounded-lg bg-gray-100">
+            *En móvil, la forma más rápida es hacer una captura de pantalla (screenshot) de la boleta.
+        </p>
+    </div>
+
+    <!-- Modal/Message Box (Reemplazo de alert()) -->
+    <div id="messageBox" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-xs w-full text-center">
+            <h3 class="text-xl font-bold text-brand-color mb-3">✅ ¡Comprobante Generado!</h3>
+            <p class="text-gray-700 mb-4">
+                Por favor, haz una **Captura de Pantalla** (screenshot) de la boleta que aparece arriba y envíala al cliente.
+            </p>
+            <p class="text-sm font-semibold text-red-600">
+                ¡Es la mejor manera de compartirla!
+            </p>
+            <button onclick="hideMessageBox()" class="mt-4 bg-brand-color text-white py-2 px-6 rounded-lg hover:bg-cyan-600 transition">
+                Entendido
+            </button>
+        </div>
+    </div>
+
+
+    <script type="text/javascript">
+        // Constantes del negocio (Precio y Datos de Transferencia)
+        const PRICE_PER_KILO = 400; // Valor del kilo de hielo en CLP
+        const ACCOUNT_DETAILS = {
+            name: "Geraldine Abarza Hernández",
+            rut: "18.763.476-8",
+            type: "Cuenta RUT"
+        };
+        const CURRENCY_FORMAT = new Intl.NumberFormat('es-CL', {
+            style: 'currency',
+            currency: 'CLP',
+            minimumFractionDigits: 0
+        });
+
+        // Inicializa la fecha al día de hoy al cargar
+        window.onload = function() {
+            const dateInput = document.getElementById('dateInput');
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.value = today;
+            generateReceipt(); // Generar un comprobante inicial
+        }
+
+        /**
+         * Muestra el modal de instrucciones de screenshot.
+         */
+        function showScreenshotInstructions() {
+            document.getElementById('messageBox').classList.remove('hidden');
+        }
+
+        /**
+         * Oculta el modal.
+         */
+        function hideMessageBox() {
+            document.getElementById('messageBox').classList.add('hidden');
+        }
+
+        /**
+         * Función principal para calcular el total y generar el HTML del comprobante.
+         */
+        function generateReceipt() {
+            const inputElement = document.getElementById('kilosInput');
+            const dateInput = document.getElementById('dateInput');
+            const errorMessage = document.getElementById('error-message');
+            const receiptContainer = document.getElementById('receiptContainer');
+            const downloadArea = document.getElementById('downloadArea');
+            
+            // Limpiar errores previos
+            errorMessage.classList.add('hidden');
+            inputElement.classList.remove('border-red-500');
+
+            const kilos = parseInt(inputElement.value, 10);
+            const selectedDate = dateInput.value;
+
+            // Validación de entrada
+            if (isNaN(kilos) || kilos <= 0) {
+                errorMessage.textContent = "Por favor, ingrese una cantidad válida de kilos (solo números enteros positivos).";
+                errorMessage.classList.remove('hidden');
+                inputElement.classList.add('border-red-500');
+                receiptContainer.classList.add('hidden');
+                downloadArea.classList.add('hidden');
+                return;
+            }
+
+            // 1. Cálculo del total
+            const totalAmount = kilos * PRICE_PER_KILO;
+
+            // 2. Formateo de la fecha (sin hora ni folio)
+            let dateStr = 'Fecha no definida';
+            if (selectedDate) {
+                const parts = selectedDate.split('-'); // [YYYY, MM, DD]
+                const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+                dateStr = dateObj.toLocaleDateString('es-CL', { 
+                    year: 'numeric', month: 'long', day: 'numeric' 
+                });
+            }
+
+            // 3. Generación del contenido HTML del comprobante
+            receiptContainer.innerHTML = `
+                <!-- Encabezado del Comprobante -->
+                <div class="text-center pb-4 border-b border-dashed border-gray-300">
+                    <p class="text-xs font-semibold text-gray-500">COMPROBANTE DE VENTA</p>
+                    <h2 class="text-4xl font-extrabold text-brand-color">🧊 ICE KING</h2>
+                    <p class="text-sm font-semibold text-gray-600 mt-2">
+                        Fecha: <span class="text-gray-900">${dateStr}</span>
+                    </p>
+                </div>
+
+                <!-- Detalles de la Transacción -->
+                <div class="py-4 border-b border-dashed border-gray-300">
+                    <p class="flex justify-between font-semibold text-lg mb-2">
+                        <span>Descripción</span>
+                        <span>Total</span>
+                    </p>
+                    <div class="flex justify-between text-gray-700 border-t pt-2 border-gray-100">
+                        <span class="text-base font-medium text-gray-600">${kilos} Kilos de Hielo</span>
+                        <span class="text-xl font-bold">${CURRENCY_FORMAT.format(totalAmount)}</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1 text-right">
+                        Precio Unitario: ${CURRENCY_FORMAT.format(PRICE_PER_KILO)} por kilo.
+                    </p>
+                </div>
+                
+                <!-- Total a Pagar -->
+                <div class="pt-4 flex justify-between items-center bg-ice-blue rounded-lg p-4">
+                    <span class="text-xl font-bold text-gray-800">TOTAL A PAGAR</span>
+                    <span class="text-4xl font-extrabold text-green-700">${CURRENCY_FORMAT.format(totalAmount)}</span>
+                </div>
+
+                <!-- Recordatorio de Datos de Transferencia y de Envío del Comprobante (Dirigido al Cliente) -->
+                <div class="mt-6 p-4 bg-secondary-gray rounded-xl border border-gray-300">
+                    <h3 class="text-lg font-bold text-primary-blue mb-3 border-b pb-2 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                        Datos para Transferencia
+                    </h3>
+                    <div class="space-y-1 text-sm text-gray-700">
+                        <p>
+                            <span class="font-semibold">Nombre:</span> ${ACCOUNT_DETAILS.name}
+                        </p>
+                        <p>
+                            <span class="font-semibold">RUT:</span> ${ACCOUNT_DETAILS.rut}
+                        </p>
+                        <p>
+                            <span class="font-semibold">Tipo de Cuenta:</span> ${ACCOUNT_DETAILS.type}
+                        </p>
+                    </div>
+
+                    <!-- Recordatorio de ENVÍO AL CLIENTE (Nuevo) -->
+                    <div class="mt-4 p-2 bg-yellow-100 rounded-lg border border-yellow-300 text-center">
+                        <p class="text-sm font-extrabold text-yellow-800">
+                            ¡IMPORTANTE!
+                        </p>
+                        <p class="text-sm font-semibold text-gray-800">
+                            Tras realizar la transferencia, por favor, envíe su comprobante de pago a través de WhatsApp.
+                        </p>
+                    </div>
+
+                </div>
+                
+                <!-- Pie de página -->
+                <p class="text-center text-xs text-gray-500 mt-4 pt-4 border-t border-gray-200">
+                    ¡Gracias por preferir ICE KING! ❄️
+                </p>
+            `;
+
+            // Mostrar el contenedor del recibo y el botón de descarga
+            receiptContainer.classList.remove('hidden');
+            downloadArea.classList.remove('hidden');
+        }
+
+    </script>
+</body>
+</html>
+
