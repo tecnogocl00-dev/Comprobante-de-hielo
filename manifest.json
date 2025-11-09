@@ -1,0 +1,21 @@
+{
+  "name": "ICE KING Comprobante",
+  "short_name": "ICE KING App",
+  "description": "Generador de comprobantes de venta de hielo para ICE KING.",
+  "start_url": "/comprobante_hielo.html",
+  "display": "standalone",
+  "background_color": "#E5E7EB",
+  "theme_color": "#06B6D4",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
