@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Comprobante ICE KING</title>
+    <!-- Configuración PWA (Manifiesto) -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#06B6D4">
+    
     <!-- Carga de Tailwind CSS para estilos -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -66,7 +72,7 @@
             <input type="number" id="kilosInput" placeholder="Solo números enteros" min="1" step="1" 
                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-brand-color focus:border-brand-color transition duration-150"
                    value="1">
-            <p id="error-message" class="text-red-500 text-xs mt-1 hidden">Por favor, ingrese una cantidad válida (solo números enteros).</p>
+            <p id="error-message" class="text-red-500 text-xs mt-1 hidden">Por favor, ingrese una cantidad válida (solo números enteros positivos).</p>
         </div>
 
         <!-- Campo de Fecha (Nuevo) -->
@@ -140,6 +146,26 @@
 
         // Ejecutar la inicialización una vez que el DOM esté completamente cargado.
         document.addEventListener('DOMContentLoaded', initApp);
+
+        // =========================================================================
+        // NOTA IMPORTANTE: Se ha comentado el registro del Service Worker (PWA)
+        // para solucionar el conflicto de carga que dejaba la página en blanco.
+        // La funcionalidad de descarga tiene prioridad.
+        // =========================================================================
+        /*
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+                    .then(registration => {
+                        console.log('Service Worker registrado con éxito:', registration);
+                    })
+                    .catch(error => {
+                        console.error('Fallo en el registro del Service Worker:', error);
+                    });
+            });
+        }
+        */
+        // =========================================================================
 
 
         /**
