@@ -37,6 +37,7 @@
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
             background-color: white;
             padding: 2rem;
+            padding-bottom: 1.5rem; /* Reducido a 1.5rem para compresión vertical */
             margin-top: 1.5rem;
             transform: scale(1); /* Asegura que la captura se vea bien */
         }
@@ -53,12 +54,12 @@
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center">
 
-    <!-- Contenedor Principal y Panel de Entrada -->
-    <div class="w-full max-w-sm mx-auto p-4 bg-white rounded-xl shadow-lg border border-gray-200">
+    <!-- Contenedor Principal y Panel de Entrada (Ancho ajustado a md) -->
+    <div class="w-full max-w-md mx-auto p-4 bg-white rounded-xl shadow-lg border border-gray-200">
         <h1 class="text-xl font-bold text-center text-brand-color mb-4">🧊 ICE KING - Generador de Boletas</h1>
 
         <!-- Campo de Kilos -->
-        <div class="mb-4">
+        <div class="mb-3">
             <label for="kilosInput" class="block text-sm font-medium text-gray-700 mb-1">
                 1. Kilos de Hielo a Vender
             </label>
@@ -69,7 +70,7 @@
         </div>
 
         <!-- Campo de Fecha (Nuevo) -->
-        <div class="mb-6">
+        <div class="mb-5">
             <label for="dateInput" class="block text-sm font-medium text-gray-700 mb-1">
                 2. Fecha del Comprobante
             </label>
@@ -84,38 +85,26 @@
         </button>
     </div>
 
-    <!-- Área del Comprobante (Diseñada para ser capturada/screenshot) -->
-    <div id="receiptContainer" class="hidden w-full max-w-sm mx-auto receipt-card mt-6">
+    <!-- Área del Comprobante (Diseñada para ser capturada/screenshot - Ancho ajustado a md) -->
+    <div id="receiptContainer" class="hidden w-full max-w-md mx-auto receipt-card mt-6">
         <!-- El contenido será insertado aquí por JavaScript -->
     </div>
     
-    <!-- Botón de Descarga/Screenshot y Mensaje -->
-    <div id="downloadArea" class="hidden w-full max-w-sm mx-auto mt-4">
-        <button id="downloadButton" onclick="showScreenshotInstructions()"
-                class="download-button w-full bg-brand-color hover:bg-cyan-600 text-white font-bold py-3 rounded-xl transition duration-300 shadow-xl border-b-4 border-cyan-700">
-            📸 Listo, haz clic aquí para Descargar/Capturar
+    <!-- Botones de Descarga (Ancho ajustado a md) -->
+    <div id="downloadArea" class="hidden w-full max-w-md mx-auto mt-4 space-y-3 sm:space-y-0 sm:flex sm:gap-3">
+        <button id="downloadButtonPng" onclick="downloadReceiptImage()"
+                class="download-button w-full sm:flex-1 bg-brand-color hover:bg-cyan-600 text-white font-bold py-3 rounded-xl transition duration-300 shadow-xl border-b-4 border-cyan-700">
+            ⬇️ Descargar Imagen (Optimizado WhatsApp)
         </button>
-        <p class="text-sm text-center text-gray-600 mt-2 p-2 rounded-lg bg-gray-100">
-            *En móvil, la forma más rápida es hacer una captura de pantalla (screenshot) de la boleta.
-        </p>
+        <button id="downloadButtonPdf" onclick="downloadReceiptPdf()"
+                class="download-button w-full sm:flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition duration-300 shadow-xl border-b-4 border-red-800">
+            ⬇️ Descargar PDF
+        </button>
     </div>
 
-    <!-- Modal/Message Box (Reemplazo de alert()) -->
-    <div id="messageBox" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-xs w-full text-center">
-            <h3 class="text-xl font-bold text-brand-color mb-3">✅ ¡Comprobante Generado!</h3>
-            <p class="text-gray-700 mb-4">
-                Por favor, haz una **Captura de Pantalla** (screenshot) de la boleta que aparece arriba y envíala al cliente.
-            </p>
-            <p class="text-sm font-semibold text-red-600">
-                ¡Es la mejor manera de compartirla!
-            </p>
-            <button onclick="hideMessageBox()" class="mt-4 bg-brand-color text-white py-2 px-6 rounded-lg hover:bg-cyan-600 transition">
-                Entendido
-            </button>
-        </div>
-    </div>
-
+    <!-- Carga de las librerías al final del body para la máxima estabilidad de carga -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script type="text/javascript">
         // Constantes del negocio (Precio y Datos de Transferencia)
@@ -131,27 +120,27 @@
             minimumFractionDigits: 0
         });
 
-        // Inicializa la fecha al día de hoy al cargar
-        window.onload = function() {
-            const dateInput = document.getElementById('dateInput');
-            const today = new Date().toISOString().split('T')[0];
-            dateInput.value = today;
-            generateReceipt(); // Generar un comprobante inicial
+        // Función de inicialización
+        function initApp() {
+            try {
+                const dateInput = document.getElementById('dateInput');
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.value = today;
+                generateReceipt(); // Generar un comprobante inicial
+            } catch (error) {
+                console.error("Error crítico en la inicialización:", error);
+                // Si hay un error, al menos mostramos un mensaje en el área de descarga.
+                const downloadArea = document.getElementById('downloadArea');
+                if (downloadArea) {
+                    downloadArea.innerHTML = '<p class="text-red-600 text-center font-bold">Error al iniciar la aplicación. Revise su conexión o entorno.</p>';
+                    downloadArea.classList.remove('hidden');
+                }
+            }
         }
 
-        /**
-         * Muestra el modal de instrucciones de screenshot.
-         */
-        function showScreenshotInstructions() {
-            document.getElementById('messageBox').classList.remove('hidden');
-        }
+        // Ejecutar la inicialización una vez que el DOM esté completamente cargado.
+        document.addEventListener('DOMContentLoaded', initApp);
 
-        /**
-         * Oculta el modal.
-         */
-        function hideMessageBox() {
-            document.getElementById('messageBox').classList.add('hidden');
-        }
 
         /**
          * Función principal para calcular el total y generar el HTML del comprobante.
@@ -195,24 +184,25 @@
 
             // 3. Generación del contenido HTML del comprobante
             receiptContainer.innerHTML = `
-                <!-- Encabezado del Comprobante -->
-                <div class="text-center pb-4 border-b border-dashed border-gray-300">
-                    <p class="text-xs font-semibold text-gray-500">COMPROBANTE DE VENTA</p>
-                    <h2 class="text-4xl font-extrabold text-brand-color">🧊 ICE KING</h2>
-                    <p class="text-sm font-semibold text-gray-600 mt-2">
+                <!-- Encabezado del Comprobante (Ajuste para sobresalir) -->
+                <div class="text-center pb-2 border-b-4 border-double border-brand-color">
+                    <!-- Título del comprobante ajustado a text-sm -->
+                    <p class="text-sm font-semibold text-gray-500">COMPROBANTE DE VENTA</p>
+                    <h2 class="text-5xl font-black text-brand-color">🧊 ICE KING</h2>
+                    <p class="text-sm font-semibold text-gray-600 mt-0.5">
                         Fecha: <span class="text-gray-900">${dateStr}</span>
                     </p>
                 </div>
 
                 <!-- Detalles de la Transacción -->
-                <div class="py-4 border-b border-dashed border-gray-300">
-                    <p class="flex justify-between font-semibold text-lg mb-2">
+                <div class="py-2 border-b border-dashed border-gray-300">
+                    <p class="flex justify-between font-semibold text-xl mb-1">
                         <span>Descripción</span>
                         <span>Total</span>
                     </p>
-                    <div class="flex justify-between text-gray-700 border-t pt-2 border-gray-100">
-                        <span class="text-base font-medium text-gray-600">${kilos} Kilos de Hielo</span>
-                        <span class="text-xl font-bold">${CURRENCY_FORMAT.format(totalAmount)}</span>
+                    <div class="flex justify-between text-gray-700 border-t pt-1 border-gray-100">
+                        <span class="text-lg font-medium text-gray-600">${kilos} Kilos de Hielo</span>
+                        <span class="text-2xl font-bold">${CURRENCY_FORMAT.format(totalAmount)}</span>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 text-right">
                         Precio Unitario: ${CURRENCY_FORMAT.format(PRICE_PER_KILO)} por kilo.
@@ -220,18 +210,18 @@
                 </div>
                 
                 <!-- Total a Pagar -->
-                <div class="pt-4 flex justify-between items-center bg-ice-blue rounded-lg p-4">
-                    <span class="text-xl font-bold text-gray-800">TOTAL A PAGAR</span>
-                    <span class="text-4xl font-extrabold text-green-700">${CURRENCY_FORMAT.format(totalAmount)}</span>
+                <div class="pt-3 flex justify-between items-center bg-ice-blue rounded-lg p-3">
+                    <span class="text-2xl font-bold text-gray-800">TOTAL A PAGAR</span>
+                    <span class="text-5xl font-extrabold text-green-700">${CURRENCY_FORMAT.format(totalAmount)}</span>
                 </div>
 
                 <!-- Recordatorio de Datos de Transferencia y de Envío del Comprobante (Dirigido al Cliente) -->
-                <div class="mt-6 p-4 bg-secondary-gray rounded-xl border border-gray-300">
-                    <h3 class="text-lg font-bold text-primary-blue mb-3 border-b pb-2 flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                <div class="mt-3 p-3 bg-secondary-gray rounded-xl border border-gray-300">
+                    <h3 class="text-xl font-bold text-primary-blue mb-2 border-b pb-1 flex items-center">
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
                         Datos para Transferencia
                     </h3>
-                    <div class="space-y-1 text-sm text-gray-700">
+                    <div class="space-y-1 text-base text-gray-700">
                         <p>
                             <span class="font-semibold">Nombre:</span> ${ACCOUNT_DETAILS.name}
                         </p>
@@ -243,12 +233,12 @@
                         </p>
                     </div>
 
-                    <!-- Recordatorio de ENVÍO AL CLIENTE (Nuevo) -->
-                    <div class="mt-4 p-2 bg-yellow-100 rounded-lg border border-yellow-300 text-center">
-                        <p class="text-sm font-extrabold text-yellow-800">
+                    <!-- Recordatorio de ENVÍO AL CLIENTE -->
+                    <div class="mt-3 p-3 bg-yellow-100 rounded-lg border border-yellow-300 text-center">
+                        <p class="text-base font-extrabold text-yellow-800">
                             ¡IMPORTANTE!
                         </p>
-                        <p class="text-sm font-semibold text-gray-800">
+                        <p class="text-base font-semibold text-gray-800">
                             Tras realizar la transferencia, por favor, envíe su comprobante de pago a través de WhatsApp.
                         </p>
                     </div>
@@ -256,17 +246,195 @@
                 </div>
                 
                 <!-- Pie de página -->
-                <p class="text-center text-xs text-gray-500 mt-4 pt-4 border-t border-gray-200">
+                <p class="text-center text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
                     ¡Gracias por preferir ICE KING! ❄️
                 </p>
             `;
 
-            // Mostrar el contenedor del recibo y el botón de descarga
+            // Mostrar el contenedor del recibo y el área de descarga
             receiptContainer.classList.remove('hidden');
             downloadArea.classList.remove('hidden');
         }
 
+        /**
+         * Función central para generar el canvas (imagen) del comprobante.
+         * Aplica un buffer para evitar recortes en la captura.
+         */
+        async function getReceiptCanvas() {
+            const receiptContainer = document.getElementById('receiptContainer');
+            const receiptWidth = receiptContainer.offsetWidth;
+            
+            // Buffer de seguridad. AJUSTADO a 30px según la última solicitud.
+            const heightBuffer = 30; 
+            const receiptHeightWithBuffer = receiptContainer.offsetHeight + heightBuffer;
+
+            return await html2canvas(receiptContainer, {
+                scale: 3, 
+                useCORS: true, 
+                backgroundColor: '#FFFFFF',
+                // Forzamos las dimensiones de captura con el buffer
+                width: receiptWidth,
+                height: receiptHeightWithBuffer,
+                scrollY: 0, 
+                scrollX: 0 
+            });
+        }
+
+        /**
+         * Descarga la imagen del comprobante usando html2canvas (PNG).
+         * SOLUCIÓN WHATSAPP: El comprobante se centra en un lienzo optimizado (rectangular ancho) para maximizar el tamaño en la previsualización.
+         */
+        async function downloadReceiptImage() {
+            const downloadButton = document.getElementById('downloadButtonPng');
+            
+            const originalText = downloadButton.innerHTML;
+            downloadButton.disabled = true;
+            downloadButton.innerHTML = 'Generando Imagen Optimizado...';
+
+            try {
+                if (typeof html2canvas === 'undefined') throw new Error("html2canvas no está cargado.");
+                
+                // 1. Obtener el canvas de la boleta (alto y estrecho)
+                const receiptCanvas = await getReceiptCanvas();
+
+                const receiptWidth = receiptCanvas.width;
+                const receiptHeight = receiptCanvas.height;
+                
+                // 2. Determinar las dimensiones del lienzo OPTIMIZADO:
+                // Factor ajustado a 1.05 (solo 5% de margen lateral) ya que el nuevo diseño es más ancho.
+                const optimizationFactor = 1.05;
+                const finalWidth = receiptWidth * optimizationFactor;
+                const finalHeight = receiptHeight; // Mantenemos la altura exacta de la boleta.
+                
+                // 3. Crear el lienzo final (el que se descargará)
+                const finalCanvas = document.createElement('canvas');
+                finalCanvas.width = finalWidth;
+                finalCanvas.height = finalHeight;
+                const ctx = finalCanvas.getContext('2d');
+
+                // 4. Llenar el fondo del lienzo final de color blanco
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, finalWidth, finalHeight);
+
+                // 5. Calcular la posición para centrar la boleta horizontalmente
+                // x-offset = (Ancho final - Ancho de la boleta) / 2
+                const offsetX = (finalWidth - receiptWidth) / 2;
+                
+                // 6. Dibujar el canvas de la boleta en el centro del lienzo final
+                ctx.drawImage(receiptCanvas, offsetX, 0); // Y-offset es 0 porque la altura es la misma.
+
+                // 7. Convertir el lienzo final a URL de imagen
+                const image = finalCanvas.toDataURL('image/png');
+                
+                // 8. Crear un elemento 'a' temporal para la descarga
+                const link = document.createElement('a');
+                link.href = image;
+                
+                // Definir el nombre del archivo de descarga
+                const kilos = document.getElementById('kilosInput').value || '0';
+                const dateStr = document.getElementById('dateInput').value;
+                link.download = `Comprobante_ICEKING_WP_${kilos}Kg_${dateStr}.png`;
+                
+                // 9. Iniciar la descarga
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+            } catch (error) {
+                console.error("Error al generar la imagen optimizada:", error);
+                // Si hay un error, informamos al usuario restaurando el botón con un mensaje de fallo.
+                downloadButton.innerHTML = '❌ Error al Descargar. Intente de Nuevo';
+                setTimeout(() => {
+                    downloadButton.innerHTML = originalText;
+                    downloadButton.disabled = false;
+                }, 3000);
+                return; // Salir de la función después del error
+            } finally {
+                // Restaurar el botón si no hubo un error
+                if (downloadButton.innerHTML.indexOf('Error') === -1) {
+                    downloadButton.innerHTML = originalText;
+                    downloadButton.disabled = false;
+                }
+            }
+        }
+
+        /**
+         * Descarga el comprobante como un documento PDF usando el canvas previamente generado.
+         * Usa tamaño de página dinámico y compensación de buffer para márgenes uniformes.
+         */
+        async function downloadReceiptPdf() {
+            const receiptContainer = document.getElementById('receiptContainer');
+            const downloadButton = document.getElementById('downloadButtonPdf');
+            
+            const originalText = downloadButton.innerHTML;
+            downloadButton.disabled = true;
+            downloadButton.innerHTML = 'Generando PDF...';
+
+            try {
+                if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+                    throw new Error("Librerías de PDF no están cargadas.");
+                }
+
+                // 1. Obtener el canvas completo (incluyendo el buffer de seguridad)
+                const canvas = await getReceiptCanvas();
+                const imgData = canvas.toDataURL('image/png');
+                
+                // 2. Calcular las dimensiones de la imagen en base al tamaño del canvas
+                const canvasWidth = canvas.width;
+                const canvasHeight = canvas.height;
+                
+                // 3. Obtener la altura real SIN el buffer para el cálculo del margen
+                const originalReceiptHeight = receiptContainer.offsetHeight;
+                const heightBuffer = 30; // El buffer usado en getReceiptCanvas (ACTUALIZADO)
+                
+                // Altura de contenido real en el canvas (excluyendo el espacio en blanco extra)
+                const canvasHeightContent = canvas.height * (originalReceiptHeight / (originalReceiptHeight + heightBuffer));
+
+                // 4. Definir dimensiones en milímetros y márgenes
+                const margin = 10; // Margen uniforme de 10mm
+                const pdfWidthMM = 210; // Usamos el ancho A4 como referencia para el escalado del ancho
+                
+                // 5. Calcular dimensiones de la imagen para que encaje en el ancho A4 con márgenes
+                const imgWidthMM = pdfWidthMM - (2 * margin); 
+                
+                // Usamos el ASPECT RATIO basado en la ALTURA REAL (sin buffer)
+                const aspectRatio = canvasHeightContent / canvasWidth; 
+                const imgHeightMM = imgWidthMM * aspectRatio;
+
+                // 6. Crear el documento PDF con TAMAÑO DE PÁGINA DINÁMICO
+                const { jsPDF } = window.jspdf;
+                // La altura de la página será la altura de la imagen real + 2*margin
+                const pdf = new jsPDF('p', 'mm', [imgWidthMM + (2 * margin), imgHeightMM + (2 * margin)]);
+                
+                // 7. Agregar la imagen al PDF
+                const xPos = margin; // Posición horizontal (margen izquierdo)
+                const yPos = margin; // Posición vertical (margen superior)
+
+                // Añadimos la imagen, que ahora escalará solo la altura de contenido real.
+                pdf.addImage(imgData, 'PNG', xPos, yPos, imgWidthMM, imgHeightMM);
+                
+                // 8. Definir nombre del archivo y guardar
+                const kilos = document.getElementById('kilosInput').value || '0';
+                const dateStr = document.getElementById('dateInput').value;
+                const filename = `Comprobante_ICEKING_${kilos}Kg_${dateStr}.pdf`;
+                
+                pdf.save(filename);
+
+            } catch (error) {
+                console.error("Error al generar el PDF:", error);
+                downloadButton.innerHTML = '❌ Error al Descargar PDF. Intente de Nuevo';
+                setTimeout(() => {
+                    downloadButton.innerHTML = originalText;
+                    downloadButton.disabled = false;
+                }, 3000);
+                return; 
+            } finally {
+                if (downloadButton.innerHTML.indexOf('Error') === -1) {
+                    downloadButton.innerHTML = originalText;
+                    downloadButton.disabled = false;
+                }
+            }
+        }
     </script>
 </body>
 </html>
-
